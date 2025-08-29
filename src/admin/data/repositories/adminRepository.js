@@ -1,15 +1,19 @@
 const Admin = require('../models/adminModel');
 
-const findAdminByName = async (name) => {
-    return Admin.findOne({ name });
+const findAdminByFirstName = async (firstName) => {
+    return Admin.findOne({ firstName });
+};
+
+const findAdminByLastName = async (lastName) => {
+    return Admin.findOne({ lastName });
 };
 
 const findAdminByEmail = async (email) => {
     return Admin.findOne({ email });
 };
 
-const createAdmin = async (name, email, password) => {
-    const newAdmin = new Admin({ name, email, password });
+const createAdmin = async (firstName, lastName, email, password) => {
+    const newAdmin = new Admin({ firstName, lastName, email, password });
     await newAdmin.save();
     return newAdmin;
 };
@@ -26,7 +30,8 @@ const updatePassword = async (adminId, hashedPassword) => {
 
 module.exports = {
     findAdminByEmail,
-    findAdminByName,
+    findAdminByFirstName,
+    findAdminByLastName,
     createAdmin,
     updatePassword
 };

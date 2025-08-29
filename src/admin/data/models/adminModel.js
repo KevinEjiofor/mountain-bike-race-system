@@ -1,49 +1,102 @@
 const mongoose = require('mongoose');
 const crypto = require('crypto');
-const RoleEnum = require("../../../enums/roleEnum");
 
 const adminSchema = new mongoose.Schema({
-    name: {
+    firstName: {
         type: String,
-        required: [true, 'Name is required'],
-        unique: true,
+        required: [true, 'First name is required'],
         trim: true,
-        minlength: [3, 'Name must be at least 3 characters long'],
-        match: [/^[A-Za-z]+$/, 'Name can only contain alphabets']
+        minlength: [2, 'First name must be at least 2 characters long'],
+        maxlength: [30, 'First name cannot exceed 30 characters'],
+        validate: {
+            validator: function(v) {
+                return /^[a-zA-Z]+$/.test(v);
+            },
+            message: 'First name can only contain alphabets'
+        }
+    },
+    lastName: {
+        type: String,
+        required: [true, 'Last name is required'],
+        trim: true,
+        minlength: [2, 'Last name must be at least 2 characters long'],
+        maxlength: [30, 'Last name cannot exceed 30 characters'],
+        validate: {
+            validator: function(v) {
+                return /^[a-zA-Z]+$/.test(v);
+            },
+            message: 'Last name can only contain alphabets'
+        }
     },
     email: {
         type: String,
         required: [true, 'Email is required'],
         unique: true,
-        match: [/^\S+@\S+\.\S+$/, 'Please use a valid email address'],
-        trim: true
+        lowercase: true,
+        validate: {
+            validator: function(v) {
+                return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+            },
+            message: 'Please enter a valid email'
+        }
     },
     password: {
         type: String,
         required: [true, 'Password is required'],
-        minlength: [6, 'Password must be at least 6 characters long'],
-        trim: true
+        minlength: [6, 'Password must be at least 6 characters long']
     },
     role: {
         type: String,
-        enum: Object.values(RoleEnum),
-        default: RoleEnum.ADMIN
+        enum: ['admin', 'super_admin'],
+        default: 'admin'
     },
-    resetPasswordToken: {
-        type: String,
-        default: null
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
+    emailVerificationPin: String,
+    emailVerificationExpire: Date,
+    isEmailVerified: {
+        type: Boolean,
+        default: false
     },
-    resetPasswordExpire: {
-        type: Date,
-        default: null
+    isActive: {
+        type: Boolean,
+        default: true
+    },
+    lastLogin: {
+        type: Date
     }
-}, { timestamps: true });
+}, {
+    timestamps: true
+});
 
+adminSchema.virtual('fullName').get(function() {
+    return `${this.firstName} ${this.lastName}`;
+});
 
-adminSchema.methods.createPasswordResetToken = function () {
-    const rawToken = (crypto.randomInt(0, 1000000)).toString().padStart(6, '0'); // e.g., "034159"
-    this.resetPasswordToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+adminSchema.methods.createPasswordResetToken = function() {
+    const pin = Math.floor(100000 + Math.random() * 900000).toString();
+    this.resetPasswordToken = crypto.createHash('sha256').update(pin).digest('hex');
     this.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
-    return rawToken;
+    return pin;
 };
+
+adminSchema.methods.createEmailVerificationPin = function() {
+    const pin = Math.floor(100000 + Math.random() * 900000).toString();
+    this.emailVerificationPin = crypto.createHash('sha256').update(pin).digest('hex');
+    this.emailVerificationExpire = Date.now() + 15 * 60 * 1000;
+    return pin;
+};
+
+adminSchema.methods.toJSON = function() {
+    const adminObject = this.toObject();
+    delete adminObject.password;
+    delete adminObject.resetPasswordToken;
+    delete adminObject.resetPasswordExpire;
+    delete adminObject.emailVerificationPin;
+    delete adminObject.emailVerificationExpire;
+    delete adminObject._id;
+    delete adminObject.__v;
+    return adminObject;
+};
+
 module.exports = mongoose.model('Admin', adminSchema);

@@ -57,7 +57,8 @@ const conflictResponse = (res, message = 'Resource conflict') => {
     return errorResponse(res, message, 409);
 };
 
-const paginatedResponse = (res, data, paginationInfo, message = 'Data retrieved successfully') => {
+// FIX: This was calling non-existent sendSuccessResponse function
+const paginatedResponse = (res, data, paginationInfo, message = 'Data retrieved successfully', meta = {}) => {
     const {
         page,
         limit,
@@ -69,7 +70,8 @@ const paginatedResponse = (res, data, paginationInfo, message = 'Data retrieved 
         prevPage
     } = paginationInfo;
 
-    const meta = {
+    const responseMeta = {
+        ...meta,
         pagination: {
             currentPage: page,
             itemsPerPage: limit,
@@ -82,7 +84,7 @@ const paginatedResponse = (res, data, paginationInfo, message = 'Data retrieved 
         }
     };
 
-    return successResponse(res, data, message, 200, meta);
+    return successResponse(res, data, message, 200, responseMeta);
 };
 
 const asyncHandler = (controller) => {
@@ -111,6 +113,8 @@ const createPaginationInfo = (page, limit, totalItems) => {
 };
 
 const handleDatabaseError = (error, res) => {
+    console.error('Database Error Details:', error); // Add logging for debugging
+
     let message = 'Database operation failed';
     let statusCode = 500;
 

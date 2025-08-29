@@ -19,7 +19,7 @@ const raceResultSchema = new mongoose.Schema({
         type: Date
     },
     totalTime: {
-        type: Number // Time in seconds
+        type: Number 
     },
     status: {
         type: String,

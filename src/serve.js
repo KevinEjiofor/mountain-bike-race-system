@@ -5,6 +5,7 @@ const cors = require("cors"); // ✅ added
 const connectDB = require("./config/DataBaseConfig");
 const adminRoutes = require('./routes/adminAuthRoutes');
 const raceRoutes = require('./routes/raceRoutes');
+const riderRoutes = require('./routes/riderRoutes');
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.get("/", (req, res) => {
 
 app.use('/api/admin', adminRoutes);
 app.use('/api/races', raceRoutes);
+app.use('/api/riders', riderRoutes)
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

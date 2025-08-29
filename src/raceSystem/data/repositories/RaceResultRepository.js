@@ -1,4 +1,4 @@
-const BaseRepository = require('./BaseRepository');
+const BaseRepository = require('../../../rider/data/repositories/BaseRepository');
 const RaceResult = require('../models/RaceResult');
 
 class RaceResultRepository extends BaseRepository {
@@ -18,6 +18,7 @@ class RaceResultRepository extends BaseRepository {
             .sort({ totalTime: 1 })
             .limit(3);
     }
+
 
     async getRidersWhoDidNotFinish(raceId) {
         return await this.model
@@ -57,6 +58,26 @@ class RaceResultRepository extends BaseRepository {
         for (let i = 0; i < results.length; i++) {
             await this.model.findByIdAndUpdate(results[i]._id, { position: i + 1 });
         }
+    }
+
+
+    async findExistingRegistration(raceId, riderId) {
+        return await this.model.findOne({
+            race: raceId,
+            rider: riderId
+        });
+    }
+
+
+    async registerParticipant(raceId, riderId) {
+        const registrationData = {
+            race: raceId,
+            rider: riderId,
+            startTime: new Date(),
+            status: 'Registered'
+        };
+
+        return await this.model.create(registrationData);
     }
 }
 

@@ -32,6 +32,11 @@ const raceSchema = new mongoose.Schema({
             }
         }
     },
+    timezone: {
+        type: String,
+        default: 'UTC',
+        enum: ['UTC', 'WAT', 'GMT+1', 'Africa/Lagos']
+    },
     startTime: {
         type: Date,
         required: true
@@ -44,6 +49,11 @@ const raceSchema = new mongoose.Schema({
         required: true,
         min: 0,
         max: 1000
+    },
+    terrain: {
+        type: String,
+        enum: ['Road', 'Urban Road','Desert Sand','Mountain Trail','Trail', 'Mixed', 'Track', 'Cross-Country', 'Downhill'],
+        default: 'Road'
     },
     difficulty: {
         type: String,
@@ -86,15 +96,17 @@ const raceSchema = new mongoose.Schema({
         lastUpdated: Date,
         forecastDate: Date
     }
+
 }, {
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true }
 });
 
-// Indexes for better query performance
+
 raceSchema.index({ startTime: 1, status: 1 });
 raceSchema.index({ status: 1 });
+raceSchema.index({ terrain: 1 });
 raceSchema.index({ 'location.name': 'text', name: 'text', description: 'text' });
 
 module.exports = mongoose.model('Race', raceSchema);

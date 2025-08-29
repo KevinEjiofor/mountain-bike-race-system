@@ -1,5 +1,7 @@
 const axios = require('axios');
 
+
+
 class WeatherService {
     constructor() {
         this.apiKey = process.env.WEATHER_API_KEY;
