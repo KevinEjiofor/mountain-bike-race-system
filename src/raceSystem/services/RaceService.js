@@ -97,22 +97,40 @@ class RaceService {
         }
     }
 
-    async getRidersNotInRace(raceId) {
+    async analyzeRaceCompletion(raceId) {
         try {
-            const race = await Race.findById(raceId).select('categories difficulty terrain').exec();
-            const allRiders = await Rider.find({}, '_id firstName lastName category experience').exec();
-            const allRiderIds = allRiders.map(rider => rider._id);
+            const [allResults, race] = await Promise.all([
+                this.raceResultRepository.getResultsByRace(raceId),
+                Race.findById(raceId).exec()
+            ]);
 
-            const nonParticipantIds = await this.raceResultRepository.getRidersNotInRace(raceId, allRiderIds);
-            const nonParticipants = await Rider.find({ _id: { $in: nonParticipantIds } }).exec();
+            const analysis = {
+                totalRegistered: allResults.length,
+                finished: allResults.filter(r => r.status === 'Finished').length,
+                dnf: allResults.filter(r => r.status === 'DNF').length,
+                dsq: allResults.filter(r => r.status === 'DSQ').length,
+                started: allResults.filter(r => ['Started', 'Finished', 'DNF', 'DSQ'].includes(r.status)).length,
+                completionRate: 0,
+                averageTime: null,
+                fastestTime: null,
+                slowestTime: null
+            };
 
-            return nonParticipants.map(rider => ({
-                ...rider.toObject(),
-                eligible: this.checkRiderEligibility(rider, race),
-                canRegister: this.canRiderRegister(rider, race)
-            }));
+            if (analysis.started > 0) {
+                analysis.completionRate = Math.round((analysis.finished / analysis.started) * 100);
+            }
+
+            const finishedResults = allResults.filter(r => r.status === 'Finished' && r.totalTime);
+            if (finishedResults.length > 0) {
+                const times = finishedResults.map(r => r.totalTime);
+                analysis.averageTime = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
+                analysis.fastestTime = Math.min(...times);
+                analysis.slowestTime = Math.max(...times);
+            }
+
+            return analysis;
         } catch (error) {
-            console.error('RaceService.getRidersNotInRace - Error:', error);
+            console.error('RaceService.analyzeRaceCompletion - Error:', error);
             throw error;
         }
     }
@@ -127,7 +145,6 @@ class RaceService {
         }
     }
 
-    // UPDATED: Enhanced rider status management
     async updateRiderStatus(raceId, riderId, status, notes = null) {
         try {
             const validStatuses = ['Registered', 'Started', 'Finished', 'DNF', 'DSQ'];
@@ -138,10 +155,8 @@ class RaceService {
             const updateData = { status };
             if (notes) updateData.notes = notes;
 
-            // For DNF/DSQ, record the time they dropped out but don't calculate total time
             if (status === 'DNF' || status === 'DSQ') {
                 updateData.finishTime = new Date();
-                // Don't set totalTime for DNF/DSQ
             }
 
             const result = await RaceResult.findOneAndUpdate(
@@ -154,13 +169,12 @@ class RaceService {
                 throw new Error('Rider not found in this race');
             }
 
-            return result;
+            return result.toObject(); // Convert Mongoose document to plain object
         } catch (error) {
             console.error('RaceService.updateRiderStatus - Error:', error);
             throw error;
         }
     }
-
     // NEW: Individual rider finish (mass start, individual finish)
     async finishRider(raceId, riderId) {
         try {
@@ -237,44 +251,6 @@ class RaceService {
         }
     }
 
-    async analyzeRaceCompletion(raceId) {
-        try {
-            const [allResults, race] = await Promise.all([
-                this.raceResultRepository.getResultsByRace(raceId),
-                Race.findById(raceId).exec()
-            ]);
-
-            const analysis = {
-                totalRegistered: allResults.length,
-                finished: allResults.filter(r => r.status === 'Finished').length,
-                dnf: allResults.filter(r => r.status === 'DNF').length,
-                dsq: allResults.filter(r => r.status === 'DSQ').length,
-                started: allResults.filter(r => ['Started', 'Finished', 'DNF', 'DSQ'].includes(r.status)).length,
-                completionRate: 0,
-                averageTime: null,
-                fastestTime: null,
-                slowestTime: null
-            };
-
-            if (analysis.started > 0) {
-                analysis.completionRate = Math.round((analysis.finished / analysis.started) * 100);
-            }
-
-            const finishedResults = allResults.filter(r => r.status === 'Finished' && r.totalTime);
-            if (finishedResults.length > 0) {
-                const times = finishedResults.map(r => r.totalTime);
-                analysis.averageTime = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
-                analysis.fastestTime = Math.min(...times);
-                analysis.slowestTime = Math.max(...times);
-            }
-
-            return analysis;
-        } catch (error) {
-            console.error('RaceService.analyzeRaceCompletion - Error:', error);
-            throw error;
-        }
-    }
-
     async updateRaceWeather(raceId) {
         try {
             const race = await Race.findById(raceId).exec();
@@ -304,11 +280,12 @@ class RaceService {
         }
     }
 
-    // UPDATED: Enhanced top 3 with position info and time gaps
     async getTop3FastestRiders(raceId) {
         try {
             const results = await this.raceResultRepository.getTop3FastestInRace(raceId);
-
+            if (!results || !Array.isArray(results)) {
+                return [];
+            }
             return results.map((result, index) => ({
                 ...result.toObject(),
                 rank: index + 1,
@@ -317,6 +294,25 @@ class RaceService {
             }));
         } catch (error) {
             console.error('RaceService.getTop3FastestRiders - Error:', error);
+            throw error;
+        }
+    }
+    async getRidersNotInRace(raceId) {
+        try {
+            const race = await Race.findById(raceId).select('categories difficulty terrain').exec();
+            const allRiders = await Rider.find({}, '_id firstName lastName category experience').exec();
+            const allRiderIds = allRiders.map(rider => rider._id);
+
+            const nonParticipantIds = await this.raceResultRepository.getRidersNotInRace(raceId, allRiderIds);
+            const nonParticipants = await Rider.find({ _id: { $in: nonParticipantIds } }).exec();
+
+            return nonParticipants.map(rider => ({
+                ...(rider.toObject ? rider.toObject() : rider),
+                eligible: this.checkRiderEligibility(rider, race),
+                canRegister: this.canRiderRegister(rider, race)
+            }));
+        } catch (error) {
+            console.error('RaceService.getRidersNotInRace - Error:', error);
             throw error;
         }
     }
@@ -490,17 +486,16 @@ class RaceService {
         }
     }
 
-    // UPDATED: Mass start implementation - everyone starts at the same time
     async startRace(raceId) {
         try {
-            const race = await Race.findById(raceId).exec();
+            let race = await Race.findById(raceId).exec();
             if (!race) {
                 throw new Error('Race not found');
             }
 
             // Auto-transition from Draft to Open if needed
             if (race.status === 'Draft') {
-                await Race.findByIdAndUpdate(
+                race = await Race.findByIdAndUpdate(
                     raceId,
                     { status: 'Open' },
                     { new: true }
@@ -532,7 +527,7 @@ class RaceService {
                 },
                 {
                     status: 'Started',
-                    startTime: raceStartTime  // Everyone gets the SAME start time
+                    startTime: raceStartTime
                 }
             );
 
