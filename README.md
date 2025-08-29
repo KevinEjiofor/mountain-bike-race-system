@@ -1,38 +1,90 @@
-Mountain Bike Race System Documentation
-Overview
-The Mountain Bike Race System is a comprehensive platform designed to manage mountain bike races, riders, and administrative tasks. It provides features for race creation, rider registration, live standings, race results, and administrative controls. The system is built using Node.js, Express.js, and MongoDB, with a modular architecture for scalability and maintainability. <hr></hr>
-Key Features
-Race Management
-Create, Update, and Delete Races: Manage race details such as name, location, distance, terrain, and difficulty.
-Race Status Management: Transition races through statuses like Draft, Open, InProgress, Completed, and Cancelled.
-Live Standings: Fetch real-time standings during a race.
-Race Reports: Generate detailed reports, including top performers, completion rates, and weather conditions.
-Rider Management
-Rider Registration: Register riders for races with eligibility checks.
-Search Riders: Search for riders by name, email, or nationality.
-Update Rider Details: Modify rider information such as category, bike type, and emergency contact.
-Weather Integration
-Current Weather: Fetch real-time weather data for race locations.
-Forecast: Retrieve weather forecasts for upcoming races.
-Authentication & Authorization
-Admin Authentication: Secure login for administrators with JWT-based authentication.
-Role-Based Access Control: Restrict access to admin-only features.
-Email Verification: Ensure secure admin account creation with email verification.
-Reporting & Analytics
-Race Statistics: Analyze race completion rates, average times, and participant statuses.
-Top Performers: Identify the top 3 fastest riders in a race.
-DNF/DSQ Analysis: Track riders who did not finish or were disqualified.
-<hr></hr>
-Technology Stack
-Backend
-Node.js: JavaScript runtime for server-side development.
-Express.js: Web framework for building RESTful APIs.
-MongoDB: NoSQL database for storing race, rider, and admin data.
-Libraries & Tools
-Mongoose: ODM for MongoDB.
-Joi: Data validation library.
-bcrypt.js: Password hashing.
-jsonwebtoken: Token-based authentication.
-axios: HTTP client for external API calls (e.g., weather data).
-<hr></hr>
-Project 
+#  Mountain Bike Race System
+
+##  Overview
+
+A backend system for managing **mountain bike races, riders, and results**, built with **Node.js, Express.js, MongoDB**, and **OpenWeatherMap API**.
+
+---
+
+##  Features
+
+* **Race Management:** Create, update, delete races, track statuses, live standings, and reports.
+* **Rider Management:** Register riders, update details, and search by name/email/nationality.
+* **Weather Integration:** Real-time & forecast weather for race locations.
+* **Authentication:** JWT-based admin login, email verification, role-based access.
+* **Reports & Analytics:** Top 3 fastest riders, riders who did not finish/participate, completion stats.
+
+---
+
+## Tech Stack
+
+* **Backend:** Node.js, Express.js, MongoDB
+* **Libraries:** Mongoose, Joi, bcrypt.js, jsonwebtoken, axios
+
+---
+
+## Setup
+
+1. Clone repo:
+
+   ```bash
+   git clone https://github.com/KevinEjiofor/mountain-bike-race-system.git
+   cd mountain-bike-race-system
+   ```
+2. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+3. Add `.env` file:
+
+   ```env
+   MONGO_URI=your_mongo_connection_string
+   JWT_SECRET=your_jwt_secret
+   WEATHER_API_KEY=your_openweathermap_api_key
+   PORT=5050
+   ```
+4. Run app:
+
+   ```bash
+   npm start
+   ```
+
+   Base URL: `http://localhost:5050`
+
+---
+
+##  Key Endpoints
+
+### Admin
+
+* `POST /api/admin/login` – Admin login
+* `POST /api/admin/register` – Register admin
+* `POST /api/admin/verify-email` – Verify admin email
+
+### Riders
+
+* `GET /api/riders` – All riders
+* `POST /api/riders` – Create rider
+* `PUT /api/riders/:id` – Update rider
+
+### Races
+
+* `GET /api/races` – All races
+* `POST /api/races` – Create race
+* `PUT /api/races/:id` – Update race
+* `GET /api/races/:id/standings` – Live standings
+
+---
+
+##  Testing
+
+Run unit tests:
+
+```bash
+npm test
+```
+
+
+
+Do you want me to also **add example JSON responses** (e.g., for top 3 riders) so it looks more practical to reviewers?
