@@ -84,7 +84,3 @@ Run unit tests:
 ```bash
 npm test
 ```
-
-
-
-Do you want me to also **add example JSON responses** (e.g., for top 3 riders) so it looks more practical to reviewers?
